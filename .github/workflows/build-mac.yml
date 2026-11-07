@@ -240,6 +240,25 @@ jobs:
               with path.open("rb") as f:
                   f.seek(offset)
                   return f.read(4)
+          def pfs0_is_nsz(path):
+              """NSZ is PFS0 that contains .ncz entries. Plain NSP has .nca only.
+              Curl downloads land as *.download with no extension, so we must not
+              always rename PFS0 → .nsp or nsz -D never runs and nx_extract fails
+              with 'no Program NCA'."""
+              import struct
+              try:
+                  with path.open("rb") as f:
+                      if f.read(4) != b"PFS0":
+                          return False
+                      count, string_size = struct.unpack("<II", f.read(8))
+                      f.read(4)
+                      if count > 100000 or string_size > 50_000_000:
+                          return False
+                      f.read(count * 0x18)
+                      names = f.read(string_size)
+                  return b".ncz\0" in names or names.lower().endswith(b".ncz")
+              except (OSError, struct.error):
+                  return False
           def validate_package(path):
               suffix = path.suffix.lower()
               magic = read_magic(path)
@@ -304,14 +323,14 @@ jobs:
                       "checking as a direct package."
                   )
                   if signature == b"PFS0":
-                      extension = ".nsp"
+                      extension = ".nsz" if pfs0_is_nsz(source) else ".nsp"
                   elif read_magic(source, 0x100) == b"HEAD":
                       extension = ".xci"
                   else:
                       raise SystemExit(
                           f"{label} is not a recognized RAR archive "
-                          "or direct NSP/XCI package. "
-                          "Direct downloads must be NSP or XCI files."
+                          "or direct NSP/XCI/NSZ package. "
+                          "Direct downloads must be NSP, NSZ, or XCI files."
                       )
                   target = game_dir / f"{label}{extension}"
                   if target.exists():
