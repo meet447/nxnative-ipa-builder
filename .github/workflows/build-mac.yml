@@ -607,14 +607,17 @@ jobs:
           echo "===== Before First Pass ====="
           df -h /
 
+          # --gpu none: CI Macs often expose a non-applegpu Metal arch (e.g. air64_v27)
+          # so mac_gpu_arch() cannot name a pipeline archive; the app builds bases on first start.
           ARGS=(
             "$GAME_DIR"
             -k "$WORK/prod.keys"
             --allow-other-metal
+            --platform mac-app
+            --gpu none
           )
 
-          echo "Mac app build: --platform mac-app"
-          ARGS+=(--platform mac-app)
+          echo "Mac app build: --platform mac-app --gpu none"
 
           python scripts/build_ipa_from_nsp.py \
             "${ARGS[@]}" \
@@ -673,9 +676,9 @@ jobs:
               "$GAME_DIR"
               -k "$WORK/prod.keys"
               --allow-other-metal
+              --platform mac-app
+              --gpu none
             )
-
-            ARGS+=(--platform mac-app)
             python scripts/build_ipa_from_nsp.py \
               "${ARGS[@]}" \
               -o "$OUTPUT" 2>&1 | tee -a "$WORK/build-console.log"

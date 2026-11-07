@@ -15,7 +15,7 @@ Two workflows are started manually from the **Actions** tab:
 | **NxNative - iPhone 15 IPA** | iPhone 15 (BC texture fallback) | [mianmuhammadse/nxnative](https://github.com/mianmuhammadse/nxnative) at a pinned commit |
 | **NxNative - Mac App** | macOS app (`--platform mac-app`) | [seedds/nxnative](https://github.com/seedds/nxnative) at `main` |
 
-Use the iPhone 15 workflow for your phone. Use the Mac workflow when you want a Finder-openable `.app` (artifact is a zip).
+Use the iPhone 15 workflow for your phone. Use the Mac workflow when you want a Finder-openable `.app` (artifact is a zip). The Mac workflow passes `--gpu none` so CI runners that report a non-`applegpu_*` Metal architecture still pack the app (pipeline bases are built on first launch instead of offline).
 
 ## What this repository adds
 
