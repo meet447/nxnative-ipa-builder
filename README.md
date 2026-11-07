@@ -8,14 +8,14 @@ Private GitHub Actions workflow for building an unsigned iOS IPA with [NxNative]
 
 ## Overview
 
-The workflow is manually started from the **Actions** tab and offers two build paths:
+Two workflows are started manually from the **Actions** tab:
 
-| Device selection | Build source | Intended path |
+| Workflow | Target | Build source |
 | --- | --- | --- |
-| iPhone 15 or older (BC fallback) | [mianmuhammadse/nxnative](https://github.com/mianmuhammadse/nxnative) at a pinned commit | BC-texture fallback |
-| iPhone 15 Pro/Pro Max or newer (standard) | [seedds/nxnative](https://github.com/seedds/nxnative) at `main` | Standard texture path |
+| **NxNative - iPhone 15 IPA** | iPhone 15 (BC texture fallback) | [mianmuhammadse/nxnative](https://github.com/mianmuhammadse/nxnative) at a pinned commit |
+| **NxNative - Mac App** | macOS app (`--platform mac-app`) | [seedds/nxnative](https://github.com/seedds/nxnative) at `main` |
 
-These labels select build configurations; they are not compatibility guarantees. Check the upstream project and your device's capabilities before choosing.
+Use the iPhone 15 workflow for your phone. Use the Mac workflow when you want a Finder-openable `.app` (artifact is a zip).
 
 ## What this repository adds
 
@@ -58,17 +58,17 @@ The workflow downloads the files using `gdown`. Make sure each link is accessibl
 ### 2. Start a build
 
 1. Open the repository's **Actions** tab.
-2. Select **NxNative - Generic IPA Builder**.
+2. Select **NxNative - iPhone 15 IPA** or **NxNative - Mac App**.
 3. Click **Run workflow**.
-4. Select the device/build path.
-5. Keep the profile ID at its default, or clear/override it only when you know the correct base-game title ID.
-6. Click **Run workflow** to start.
+4. Optionally set/clear the profile ID when you know the base-game title ID.
+5. Click **Run workflow** to start.
 
 ### 3. Retrieve the outputs
 
 When the run finishes, open its summary and download the artifacts:
 
-- **`NxNative-IPA-Standard`** or **`NxNative-IPA-BC-Fallback`** — the unsigned IPA.
+- **`NxNative-IPA-iPhone15`** — unsigned IPA (iPhone 15 workflow).
+- **`NxNative-Mac-App`** — zipped Mac `.app` (Mac workflow).
 - **`NxNative-ROMFS`** — the standalone RomFS image uploaded by the Standard path when the NVN handoff is used.
 - **`NxNative-Build-Logs`** — diagnostic logs and available game survey/build log folders.
 

@@ -54,7 +54,7 @@
 ### 2. 启动构建
 
 1. 打开仓库的 **Actions** 页面。
-2. 选择 **NxNative - Generic IPA Builder**。
+2. 选择 **NxNative - iPhone 15 IPA / NxNative - Mac App**。
 3. 点击 **Run workflow**。
 4. 选择设备/构建路径。
 5. Title ID 保持默认值；只有确认需要覆盖自动识别时才修改。
