@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: xcode-27
+    runs-on: macos-15
     timeout-minutes: 360
 
     steps:
