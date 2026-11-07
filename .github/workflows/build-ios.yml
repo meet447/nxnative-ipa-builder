@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       profile_id:
-        description: "16-hex base title ID override (e.g. 010013C00E930000). Leave blank to auto-detect from the NSP after download."
+        description: "Base game title ID (manual override; leave empty for automatic detection from the NSP)"
         required: false
         type: string
-        default: "010013C00E930000"
+        default: ""
 
 permissions:
   contents: read

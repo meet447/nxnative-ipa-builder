@@ -60,7 +60,7 @@ The workflow downloads the files using `gdown`. Make sure each link is accessibl
 1. Open the repository's **Actions** tab.
 2. Select **NxNative - iPhone 15 IPA** or **NxNative - Mac App**.
 3. Click **Run workflow**.
-4. Optionally set/clear the profile ID when you know the base-game title ID.
+4. Leave **profile_id** empty for automatic title-ID detection from the NSP (or paste a 16-hex ID only to override).
 5. Click **Run workflow** to start.
 
 ### 3. Retrieve the outputs
