@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: ""
+      game_url:
+        description: "Direct game package URL (overrides Game_URL secret). Use for VPS dashboard builds."
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -145,7 +150,8 @@ jobs:
           
       - name: Download game files and keys
         env:
-          GAME_URL: ${{ secrets.Game_URL }}
+          GAME_URL_INPUT: ${{ inputs.game_url }}
+          GAME_URL_SECRET: ${{ secrets.Game_URL }}
           UPDATE_URL: ${{ secrets.Update_URL }}
           DLC_URL: ${{ secrets.DLC_URL }}
           KEYS_URL: ${{ secrets.Keys_URL }}
@@ -154,6 +160,19 @@ jobs:
           set -euo pipefail
           WORK="$RUNNER_TEMP/nxnative"
           mkdir -p "$WORK"
+          if [[ -n "${GAME_URL_INPUT:-}" ]]; then
+            GAME_URL="$GAME_URL_INPUT"
+            echo "Using workflow_dispatch game_url override."
+          else
+            GAME_URL="${GAME_URL_SECRET:-}"
+            echo "Using Game_URL repository secret."
+          fi
+          is_gdrive_url() {
+            case "$1" in
+              *drive.google.com*|*docs.google.com*) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
           download_file() {
             local url="$1"
             local output="$2"
@@ -163,10 +182,19 @@ jobs:
             fi
             echo "Downloading $(basename "$output")..."
             for attempt in 1 2 3; do
-              if gdown --continue "$url" -O "$output" \
-                && [[ -s "$output" ]]; then
-                file "$output"
-                return
+              if is_gdrive_url "$url"; then
+                if gdown --continue "$url" -O "$output" \
+                  && [[ -s "$output" ]]; then
+                  file "$output"
+                  return
+                fi
+              else
+                if curl -fL --retry 3 --retry-delay 5 \
+                  -o "$output" "$url" \
+                  && [[ -s "$output" ]]; then
+                  file "$output"
+                  return
+                fi
               fi
               echo "Download attempt $attempt failed; retrying..."
               sleep $((attempt * 10))
