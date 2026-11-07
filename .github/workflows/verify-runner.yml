@@ -1,0 +1,55 @@
+name: Verify macOS runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: Optional label for this manual run
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-runner-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-macos-runner:
+    name: Verify environment
+    runs-on: macos-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Confirm manual trigger context
+        env:
+          RUN_NOTE: ${{ inputs.note }}
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref_name }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [[ -n "$RUN_NOTE" ]]; then
+            echo "Run note: $RUN_NOTE"
+          fi
+
+      - name: Verify macOS runner
+        run: |
+          set -euo pipefail
+          uname -a
+          sw_vers
+          echo "Architecture: $(uname -m)"
+          xcodebuild -version
+          xcrun --show-sdk-version
+          df -h .
+          sysctl -n hw.ncpu hw.memsize
+
+      - name: Confirm scaffold scope
+        run: |
+          echo "Runner verification complete."
+          echo "This scaffold performs no downloads, secret access, signing, or IPA build."
