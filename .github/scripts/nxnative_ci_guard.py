@@ -108,29 +108,40 @@ def patch_dmsh_build(repo: Path) -> bool:
     # Remove the previous per-shader cleanup, which could race paired shader
     # finishing and geometry_finish(). Restore the original one-line publish.
     legacy_per_shader = re.compile(
-        r"(?m)^    if result\[1\] == 'ok':\n"
-        r"        if os\.environ\.get\('DMSH_DISABLE_SHADER_CAS'\) != '1':\n"
-        r"            publish_cache\(key, digests\[key\], rule_fps\[key\], CODE_FP\)\n"
-        r"        # finish\(\) has copied the final MSL/reflection/library to out/,\n"
-        r"        # compiled the iOS library, and completed vin/fetch processing\.\n"
-        r"        # A paired vertex shader reads its pixel partner from out/, not w/\.\n"
-        r"        for _ci_name in os\.listdir\(w\):\n"
-        r"            if _ci_name\.startswith\(key \+ '\.'\) or _ci_name\.startswith\(key \+ '_'\):\n"
-        r"                _ci_path = os\.path\.join\(w, _ci_name\)\n"
-        r"                if os\.path\.isfile\(_ci_path\):\n"
-        r"                    try: os\.unlink\(_ci_path\)\n"
-        r"                    except OSError: pass\n"
-        r"        try: os\.unlink\(os\.path\.join\(w, f'job1_\{key\}\.json'\)\)\n"
-        r"        except OSError: pass$"
+        r"(?m)^        if result\[1\] == 'ok':\n"
+        r"            if os\.environ\.get\('DMSH_DISABLE_SHADER_CAS'\) != '1':\n"
+        r"                publish_cache\(key, digests\[key\], rule_fps\[key\], CODE_FP\)\n"
+        r"            # finish\(\) has copied the final MSL/reflection/library to out/,\n"
+        r"            # compiled the iOS library, and completed vin/fetch processing\.\n"
+        r"            # A paired vertex shader reads its pixel partner from out/, not w/\.\n"
+        r"            for _ci_name in os\.listdir\(w\):\n"
+        r"                if _ci_name\.startswith\(key \+ '\.'\) or _ci_name\.startswith\(key \+ '_'\):\n"
+        r"                    _ci_path = os\.path\.join\(w, _ci_name\)\n"
+        r"                    if os\.path\.isfile\(_ci_path\):\n"
+        r"                        try: os\.unlink\(_ci_path\)\n"
+        r"                        except OSError: pass\n"
+        r"            try: os\.unlink\(os\.path\.join\(w, f'job1_\{key\}\.json'\)\)\n"
+        r"            except OSError: pass$"
     )
     src, removed_per_shader = legacy_per_shader.subn(
-        "    if result[1] == 'ok': publish_cache(key, digests[key], rule_fps[key], CODE_FP)",
+        "        if result[1] == 'ok': publish_cache(key, digests[key], rule_fps[key], CODE_FP)",
+        src,
+    )
+    # Broken patch from anchor substring match (4 spaces inside fin()'s 8-space try body).
+    broken_cas_patch = re.compile(
+        r"(?ms)^        # NX_CI_DISK_GUARD_SAFE_CAS\n"
+        r"    if result\[1\] == 'ok':\n"
+        r"        if os\.environ\.get\('DMSH_DISABLE_SHADER_CAS'\) != '1':\n"
+        r"            publish_cache\(key, digests\[key\], rule_fps\[key\], CODE_FP\)"
+    )
+    src, removed_broken = broken_cas_patch.subn(
+        "        if result[1] == 'ok': publish_cache(key, digests[key], rule_fps[key], CODE_FP)",
         src,
     )
 
     if MARKER_DM in src:
         say("[patch] dmsh_build.py already has the safe CAS-only patch")
-        return bool(removed_pre_fin or removed_per_shader)
+        return bool(removed_pre_fin or removed_per_shader or removed_broken)
 
     if LEGACY_MARKER_DM in src:
         raise RuntimeError(
@@ -138,7 +149,7 @@ def patch_dmsh_build(repo: Path) -> bool:
             "inspect the marked block before proceeding."
         )
 
-    anchor = "    if result[1] == 'ok': publish_cache(key, digests[key], rule_fps[key], CODE_FP)"
+    anchor = "        if result[1] == 'ok': publish_cache(key, digests[key], rule_fps[key], CODE_FP)"
     if src.count(anchor) != 1:
         raise RuntimeError(
             f"Expected exactly one successful-shader publish_cache line in {p}; "
@@ -146,10 +157,10 @@ def patch_dmsh_build(repo: Path) -> bool:
         )
 
     replacement = (
-        f"    {MARKER_DM}\n"
-        "    if result[1] == 'ok':\n"
-        "        if os.environ.get('DMSH_DISABLE_SHADER_CAS') != '1':\n"
-        "            publish_cache(key, digests[key], rule_fps[key], CODE_FP)"
+        f"        {MARKER_DM}\n"
+        "        if result[1] == 'ok':\n"
+        "            if os.environ.get('DMSH_DISABLE_SHADER_CAS') != '1':\n"
+        "                publish_cache(key, digests[key], rule_fps[key], CODE_FP)"
     )
     src = src.replace(anchor, replacement, 1)
     p.write_text(src, encoding="utf-8")
